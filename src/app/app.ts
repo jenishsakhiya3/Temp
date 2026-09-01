@@ -54,7 +54,13 @@ export class AppComponent implements OnInit {
         if (result && result.account) {
           this.msalService.instance.setActiveAccount(result.account);
         }
-        this.isLoggedIn = !!this.msalService.instance.getActiveAccount();
+
+        const accounts = this.msalService.instance.getAllAccounts();
+        if (!this.msalService.instance.getActiveAccount() && accounts.length > 0) {
+          this.msalService.instance.setActiveAccount(accounts[0]);
+        }
+
+        this.isLoggedIn = accounts.length > 0 || !!this.msalService.instance.getActiveAccount();
       },
       error: (error) => console.error('Authentication Error:', error)
     });
@@ -66,7 +72,6 @@ export class AppComponent implements OnInit {
 
   goToTenant() {
     if (this.selectedTenantUrl) {
-      // Physically moves the browser away from Angular to the .NET application
       window.location.href = this.selectedTenantUrl;
     }
   }
