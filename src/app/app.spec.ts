@@ -13,7 +13,7 @@ describe('App', () => {
       handleRedirectObservable: () => of(null),
       loginRedirect: () => {}
     };
-    
+
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
@@ -32,6 +32,6 @@ describe('App', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h2')?.textContent).toContain('MSH Group Provider Portal');
+    expect(compiled.querySelector('h2')?.textContent).toContain('Global Portal');
   });
 });
