@@ -1,28 +1,33 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app';
-import { MsalService } from '@azure/msal-angular';
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
+import { InteractionStatus } from '@azure/msal-browser';
 import { of } from 'rxjs';
 
 describe('AppComponent', () => {
   let mockMsalService: any;
+  let mockMsalBroadcastService: any;
 
   beforeEach(async () => {
-    // 1. Create a mock object matching the MSAL signature used in your component
     mockMsalService = {
-      handleRedirectObservable: () => of(null), // Returns a mock Observable
+      handleRedirectObservable: () => of(null),
       loginRedirect: () => {}, 
       instance: {
-        getAllAccounts: () => [], // <-- This fixes your specific TypeError
+        getAllAccounts: () => [], 
         getActiveAccount: () => null,
         setActiveAccount: (account: any) => {}
       }
     };
 
+    mockMsalBroadcastService = {
+      inProgress$: of(InteractionStatus.None)
+    };
+
     await TestBed.configureTestingModule({
-      imports: [AppComponent], // Since AppComponent is standalone
+      imports: [AppComponent], 
       providers: [
-        // 2. Inject the mock instead of the real service
-        { provide: MsalService, useValue: mockMsalService }
+        { provide: MsalService, useValue: mockMsalService },
+        { provide: MsalBroadcastService, useValue: mockMsalBroadcastService }
       ]
     }).compileComponents();
   });
