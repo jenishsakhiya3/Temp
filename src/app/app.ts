@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MsalService } from '@azure/msal-angular';
+import { MsalBroadcastService } from '@azure/msal-angular';
+import { InteractionStatus } from '@azure/msal-browser';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -35,34 +38,47 @@ import { MsalService } from '@azure/msal-angular';
     </div>
   `
 })
+
 export class AppComponent implements OnInit {
   isLoggedIn = false;
   selectedTenantUrl = '';
 
-  // Define the target .NET App Service URLs for your tenants
   tenants = [
     { name: 'Global Tenant', appServiceUrl: 'https://sportapi-f8c3aghnezajanbx.canadacentral-01.azurewebsites.net' },
     { name: 'Tenant B', appServiceUrl: 'https://sportapi-dzgqbheja0fadadu.eastasia-01.azurewebsites.net' }
   ];
 
-  constructor(private msalService: MsalService) {}
+  // Inject the MsalBroadcastService alongside MsalService
+  constructor(
+    private msalService: MsalService,
+    private msalBroadcastService: MsalBroadcastService
+  ) {}
 
   ngOnInit(): void {
-    this.msalService.handleRedirectObservable().subscribe({
-      next: (result) => {
-        if (result && result.account) {
-          this.msalService.instance.setActiveAccount(result.account);
-        }
+    // 1. Still handle the redirect observable to process the raw token
+    this.msalService.handleRedirectObservable().subscribe();
 
-        const accounts = this.msalService.instance.getAllAccounts();
-        if (!this.msalService.instance.getActiveAccount() && accounts.length > 0) {
-          this.msalService.instance.setActiveAccount(accounts[0]);
-        }
+    // 2. Wait for MSAL to be completely idle before checking account status
+    this.msalBroadcastService.inProgress$
+      .pipe(
+        filter((status: InteractionStatus) => status === InteractionStatus.None)
+      )
+      .subscribe(() => {
+        this.checkAndSetActiveAccount();
+      });
+  }
 
-        this.isLoggedIn = accounts.length > 0 || !!this.msalService.instance.getActiveAccount();
-      },
-      error: (error) => console.error('Authentication Error:', error)
-    });
+  checkAndSetActiveAccount() {
+    let activeAccount = this.msalService.instance.getActiveAccount();
+
+    if (!activeAccount && this.msalService.instance.getAllAccounts().length > 0) {
+      let accounts = this.msalService.instance.getAllAccounts();
+      this.msalService.instance.setActiveAccount(accounts[0]);
+      activeAccount = this.msalService.instance.getActiveAccount();
+    }
+
+    // This will now correctly evaluate to true after the token is processed
+    this.isLoggedIn = !!activeAccount;
   }
 
   login() {
