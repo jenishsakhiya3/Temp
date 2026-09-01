@@ -48,7 +48,6 @@ export class AppComponent implements OnInit {
   constructor(private msalService: MsalService) {}
 
   ngOnInit(): void {
-    // Process the return from Microsoft login
     this.msalService.handleRedirectObservable().subscribe({
       next: (result) => {
         if (result && result.account) {
