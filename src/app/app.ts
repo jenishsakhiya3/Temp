@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MsalService } from '@azure/msal-angular';
-import { MsalBroadcastService } from '@azure/msal-angular';
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { InteractionStatus } from '@azure/msal-browser';
 import { filter } from 'rxjs/operators';
 
@@ -38,7 +37,6 @@ import { filter } from 'rxjs/operators';
     </div>
   `
 })
-
 export class AppComponent implements OnInit {
   isLoggedIn = false;
   selectedTenantUrl = '';
@@ -48,17 +46,30 @@ export class AppComponent implements OnInit {
     { name: 'Tenant B', appServiceUrl: 'https://sportapi-dzgqbheja0fadadu.eastasia-01.azurewebsites.net' }
   ];
 
-  // Inject the MsalBroadcastService alongside MsalService
   constructor(
     private msalService: MsalService,
     private msalBroadcastService: MsalBroadcastService
   ) {}
 
   ngOnInit(): void {
-    // 1. Still handle the redirect observable to process the raw token
-    this.msalService.handleRedirectObservable().subscribe();
+    // 1. Process the redirect response from Microsoft and update state immediately
+    this.msalService.handleRedirectObservable().subscribe({
+      next: (result) => {
+        if (result && result.account) {
+          this.msalService.instance.setActiveAccount(result.account);
+        }
+        
+        this.checkAndSetActiveAccount();
 
-    // 2. Wait for MSAL to be completely idle before checking account status
+        // Strip the authorization hash from the URL bar to prevent re-processing loops
+        if (window.location.hash && window.location.hash.includes('code=')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      },
+      error: (error) => console.error('Authentication Redirect Error:', error)
+    });
+
+    // 2. Fallback check when MSAL finishes its interaction cycle
     this.msalBroadcastService.inProgress$
       .pipe(
         filter((status: InteractionStatus) => status === InteractionStatus.None)
@@ -72,12 +83,11 @@ export class AppComponent implements OnInit {
     let activeAccount = this.msalService.instance.getActiveAccount();
 
     if (!activeAccount && this.msalService.instance.getAllAccounts().length > 0) {
-      let accounts = this.msalService.instance.getAllAccounts();
+      const accounts = this.msalService.instance.getAllAccounts();
       this.msalService.instance.setActiveAccount(accounts[0]);
       activeAccount = this.msalService.instance.getActiveAccount();
     }
 
-    // This will now correctly evaluate to true after the token is processed
     this.isLoggedIn = !!activeAccount;
   }
 
