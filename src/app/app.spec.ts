@@ -1,10 +1,24 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app';
+import { MsalService } from '@azure/msal-angular';
+import { of } from 'rxjs';
 
 describe('App', () => {
   beforeEach(async () => {
+    const msalServiceMock = {
+      instance: {
+        getActiveAccount: () => null,
+        setActiveAccount: () => {}
+      },
+      handleRedirectObservable: () => of(null),
+      loginRedirect: () => {}
+    };
+    
     await TestBed.configureTestingModule({
       imports: [AppComponent],
+      providers: [
+        { provide: MsalService, useValue: msalServiceMock }
+      ]
     }).compileComponents();
   });
 
@@ -14,10 +28,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
-    await fixture.whenStable();
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, global-tenant-portal');
+    expect(compiled.querySelector('h2')?.textContent).toContain('MSH Group Provider Portal');
   });
 });
