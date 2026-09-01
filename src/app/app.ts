@@ -41,8 +41,8 @@ export class AppComponent implements OnInit {
 
   // Define the target .NET App Service URLs for your tenants
   tenants = [
-    { name: 'Tenant A', appServiceUrl: 'https://tenant-a-easy-auth-app.azurewebsites.net' },
-    { name: 'Tenant B', appServiceUrl: 'https://tenant-b-easy-auth-app.azurewebsites.net' }
+    { name: 'Global Tenant', appServiceUrl: 'https://sportapi-f8c3aghnezajanbx.canadacentral-01.azurewebsites.net' },
+    { name: 'Tenant B', appServiceUrl: 'https://sportapi-dzgqbheja0fadadu.eastasia-01.azurewebsites.net' }
   ];
 
   constructor(private msalService: MsalService) {}
