@@ -32,15 +32,16 @@ import { TENANTS, TenantConfig } from './auth-config';
 
       <!-- Show when user IS logged in -->
       <ng-container *ngIf="isLoggedIn">
-        <div style="background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); padding: 32px; max-width: 500px; width: 100%; box-sizing: border-box;">
+        <div style="background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); padding: 32px; max-width: 520px; width: 100%; box-sizing: border-box;">
           
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
             <div>
               <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 4px 0;">Welcome<span *ngIf="userName">, {{ userName }}</span></h2>
-              <p style="font-size: 14px; color: #6b7280; margin: 0;">Select an app to redirect</p>
+              <p style="font-size: 14px; color: #6b7280; margin: 0;">Select an application to launch</p>
             </div>
             <button 
               (click)="logout()" 
+              [disabled]="isRedirecting"
               style="padding: 6px 14px; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 6px; border: 1px solid #d1d5db; background-color: #f9fafb; color: #374151; transition: all 0.2s;">
               Sign out
             </button>
@@ -49,20 +50,24 @@ import { TENANTS, TenantConfig } from './auth-config';
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div 
               *ngFor="let tenant of tenants" 
-              (click)="redirectToApp(tenant.appServiceUrl)"
-              style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border: 1px solid #e5e7eb; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: #fafafa;"
-              onmouseover="this.style.borderColor='#0078d4'; this.style.backgroundColor='#f0f7ff';"
-              onmouseout="this.style.borderColor='#e5e7eb'; this.style.backgroundColor='#fafafa';">
+              (click)="!isRedirecting && redirectToApp(tenant)"
+              [style.opacity]="isRedirecting ? 0.6 : 1"
+              [style.cursor]="isRedirecting ? 'not-allowed' : 'pointer'"
+              style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border: 1px solid #e5e7eb; border-radius: 10px; transition: all 0.2s; background: #fafafa;"
+              onmouseover="if (!this.style.cursor.includes('not-allowed')) { this.style.borderColor='#0078d4'; this.style.backgroundColor='#f0f7ff'; }"
+              onmouseout="if (!this.style.cursor.includes('not-allowed')) { this.style.borderColor='#e5e7eb'; this.style.backgroundColor='#fafafa'; }">
               
               <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; margin-right: 12px;">
                 <span style="font-size: 16px; font-weight: 600; color: #1f2937;">{{ tenant.name }}</span>
-                <span style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;">{{ tenant.appServiceUrl }}</span>
+                <span style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">{{ tenant.appServiceUrl }}</span>
               </div>
               
               <button 
-                (click)="redirectToApp(tenant.appServiceUrl); $event.stopPropagation()" 
-                style="padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; border: none; background-color: #0078d4; color: white; white-space: nowrap; flex-shrink: 0;">
-                Launch &rarr;
+                (click)="redirectToApp(tenant); $event.stopPropagation()" 
+                [disabled]="isRedirecting"
+                style="padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; border: none; background-color: #0078d4; color: white; white-space: nowrap; flex-shrink: 0; min-width: 90px;">
+                <span *ngIf="redirectingTenantId === tenant.id">Opening...</span>
+                <span *ngIf="redirectingTenantId !== tenant.id">Launch &rarr;</span>
               </button>
             </div>
           </div>
@@ -76,6 +81,8 @@ import { TENANTS, TenantConfig } from './auth-config';
 export class AppComponent implements OnInit {
   isLoggedIn = false;
   userName = '';
+  isRedirecting = false;
+  redirectingTenantId = '';
   tenants: TenantConfig[] = TENANTS;
 
   constructor(
@@ -126,29 +133,44 @@ export class AppComponent implements OnInit {
     this.msalService.logoutRedirect();
   }
 
-  async redirectToApp(baseUrl: string): Promise<void> {
+  async redirectToApp(tenant: TenantConfig): Promise<void> {
     const activeAccount = this.msalService.instance.getActiveAccount();
     if (!activeAccount) {
       this.login();
       return;
     }
 
-    let token = activeAccount.idToken || '';
+    this.isRedirecting = true;
+    this.redirectingTenantId = tenant.id;
+    this.cdr.detectChanges();
+
+    let idToken = activeAccount.idToken || '';
+    let accessToken = '';
 
     try {
-      // Acquire token to ensure it is fresh
+      // Acquire token silently to get fresh tokens
       const tokenResponse = await this.msalService.instance.acquireTokenSilent({
         scopes: ['User.Read'],
         account: activeAccount
       });
-      token = tokenResponse.idToken || tokenResponse.accessToken || token;
+      idToken = tokenResponse.idToken || idToken;
+      accessToken = tokenResponse.accessToken || '';
     } catch (e) {
-      console.warn('Could not acquire silent token, using cached ID token:', e);
+      console.warn('Could not acquire silent token, falling back to cached ID token:', e);
     }
 
-    // Attach token to URL fragment (standard for OAuth/OIDC tokens)
-    const separator = baseUrl.includes('#') ? '&' : '#';
-    const redirectUrl = `${baseUrl}${separator}id_token=${encodeURIComponent(token)}`;
+    const tokenPayload = accessToken || idToken;
+    const userEmail = activeAccount.username || '';
+
+    // Construct URL hash fragment (standard OAuth/OIDC transfer)
+    const hashParams = new URLSearchParams();
+    if (idToken) hashParams.set('id_token', idToken);
+    if (accessToken) hashParams.set('access_token', accessToken);
+    if (tokenPayload) hashParams.set('token', tokenPayload);
+    if (userEmail) hashParams.set('user', userEmail);
+
+    const separator = tenant.appServiceUrl.includes('#') ? '&' : '#';
+    const redirectUrl = `${tenant.appServiceUrl}${separator}${hashParams.toString()}`;
 
     window.location.href = redirectUrl;
   }
