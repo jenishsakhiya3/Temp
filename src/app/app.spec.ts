@@ -1,8 +1,10 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { InteractionStatus } from '@azure/msal-browser';
 import { of } from 'rxjs';
+import { TENANTS } from './auth-config';
 
 describe('AppComponent', () => {
   let mockMsalService: any;
@@ -77,7 +79,6 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
     expect(app.tenants.length).toBe(2);
-    expect(app.tenants[0].appServiceUrl).toBe('https://sportapi-f8c3aghnezajanbx.canadacentral-01.azurewebsites.net');
-    expect(app.tenants[1].appServiceUrl).toBe('https://sportapi-dzgqbheja0fadadu.eastasia-01.azurewebsites.net');
+    expect(app.tenants).toEqual(TENANTS);
   });
 });
