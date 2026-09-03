@@ -2,9 +2,9 @@ import { Configuration, BrowserCacheLocation } from '@azure/msal-browser';
 
 export const msalConfig: Configuration = {
   auth: {
-    clientId: '3a221580-7548-4dfa-bb1d-15ff38c6982a',
+    clientId: '3c37b98b-69df-4f28-b6f5-03ad9d7ad852',
     authority: 'https://login.microsoftonline.com/66c5be6d-b895-4170-9fe4-1d29253008f0', 
-    redirectUri: 'https://globallogin-baeecpe6hrhedqan.eastus-01.azurewebsites.net', 
+    redirectUri: 'https://globallogin-baeecpe6hrhedqan.westus3-01.azurewebsites.net', 
   },
   cache: {
     cacheLocation: BrowserCacheLocation.SessionStorage
