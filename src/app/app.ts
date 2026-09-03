@@ -126,7 +126,9 @@ export class AppComponent implements OnInit {
   }
 
   login(): void {
-    this.msalService.loginRedirect();
+    this.msalService.loginRedirect({
+      scopes: ['User.Read']
+    });
   }
 
   logout(): void {
@@ -147,20 +149,36 @@ export class AppComponent implements OnInit {
     let idToken = activeAccount.idToken || '';
     let accessToken = '';
 
+    const tokenRequest = {
+      scopes: ['User.Read'],
+      account: activeAccount
+    };
+
     try {
-      // Acquire token silently to get fresh tokens
-      const tokenResponse = await this.msalService.instance.acquireTokenSilent({
-        scopes: ['User.Read'],
-        account: activeAccount
-      });
-      idToken = tokenResponse.idToken || idToken;
+      // 1. Attempt silent token acquisition
+      const tokenResponse = await this.msalService.instance.acquireTokenSilent(tokenRequest);
       accessToken = tokenResponse.accessToken || '';
-    } catch (e) {
-      console.warn('Could not acquire silent token, falling back to cached ID token:', e);
+      idToken = tokenResponse.idToken || idToken;
+      console.log('Successfully acquired Access Token silently:', accessToken ? 'YES (Length: ' + accessToken.length + ')' : 'NO');
+    } catch (silentError) {
+      console.warn('acquireTokenSilent failed:', silentError);
+
+      try {
+        // 2. Fallback to popup if silent acquisition fails (e.g. consent or interaction required)
+        const popupResponse = await this.msalService.instance.acquireTokenPopup(tokenRequest);
+        accessToken = popupResponse.accessToken || '';
+        idToken = popupResponse.idToken || idToken;
+        console.log('Successfully acquired Access Token via Popup:', accessToken ? 'YES' : 'NO');
+      } catch (popupError) {
+        console.error('acquireTokenPopup also failed:', popupError);
+      }
     }
 
     const tokenPayload = accessToken || idToken;
     const userEmail = activeAccount.username || '';
+
+    console.log('Final Access Token:', accessToken);
+    console.log('Final ID Token:', idToken);
 
     // Construct URL hash fragment (standard OAuth/OIDC transfer)
     const hashParams = new URLSearchParams();

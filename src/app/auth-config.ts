@@ -9,7 +9,7 @@ export const msalConfig: Configuration = {
       : 'https://globallogin-baeecpe6hrhedqan.westus3-01.azurewebsites.net', 
   },
   cache: {
-    cacheLocation: BrowserCacheLocation.SessionStorage
+    cacheLocation: BrowserCacheLocation.LocalStorage
   }
 };
 
