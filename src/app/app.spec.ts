@@ -11,20 +11,24 @@ describe('AppComponent', () => {
   beforeEach(async () => {
     mockMsalService = {
       handleRedirectObservable: () => of(null),
-      loginRedirect: () => {}, 
+      loginPopup: () => of(null),
+      loginRedirect: () => of(undefined),
+      logoutPopup: () => of(undefined),
+      logoutRedirect: () => of(undefined),
       instance: {
-        getAllAccounts: () => [], 
+        getAllAccounts: () => [],
         getActiveAccount: () => null,
-        setActiveAccount: (account: any) => {}
+        setActiveAccount: (_account: any) => {}
       }
     };
 
     mockMsalBroadcastService = {
-      inProgress$: of(InteractionStatus.None)
+      inProgress$: of(InteractionStatus.None),
+      msalSubject$: of()
     };
 
     await TestBed.configureTestingModule({
-      imports: [AppComponent], 
+      imports: [AppComponent],
       providers: [
         { provide: MsalService, useValue: mockMsalService },
         { provide: MsalBroadcastService, useValue: mockMsalBroadcastService }
@@ -35,9 +39,45 @@ describe('AppComponent', () => {
   it('should create the app', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    
-    fixture.detectChanges(); 
-    
+    fixture.detectChanges();
     expect(app).toBeTruthy();
+    expect(app.isLoggedIn).toBe(false);
+  });
+
+  it('should detect logged in user if active account is present', () => {
+    const mockAccount = { name: 'John Doe', username: 'john@example.com' };
+    mockMsalService.instance.getAllAccounts = () => [mockAccount];
+    mockMsalService.instance.getActiveAccount = () => mockAccount;
+
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(app.isLoggedIn).toBe(true);
+    expect(app.userName).toBe('John Doe');
+  });
+
+  it('should call loginRedirect when login is triggered', () => {
+    const loginSpy = vi.spyOn(mockMsalService, 'loginRedirect');
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.login();
+    expect(loginSpy).toHaveBeenCalled();
+  });
+
+  it('should call logoutRedirect when logout is triggered', () => {
+    const logoutSpy = vi.spyOn(mockMsalService, 'logoutRedirect');
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.logout();
+    expect(logoutSpy).toHaveBeenCalled();
+  });
+
+  it('should have 2 tenant applications listed', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app.tenants.length).toBe(2);
+    expect(app.tenants[0].appServiceUrl).toBe('https://sportapi-f8c3aghnezajanbx.canadacentral-01.azurewebsites.net');
+    expect(app.tenants[1].appServiceUrl).toBe('https://sportapi-dzgqbheja0fadadu.eastasia-01.azurewebsites.net');
   });
 });

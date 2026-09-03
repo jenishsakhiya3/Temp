@@ -1,22 +1,24 @@
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { MSAL_INSTANCE, MsalService, MsalBroadcastService } from '@azure/msal-angular';
+import { IPublicClientApplication, PublicClientApplication } from '@azure/msal-browser';
+
 import { routes } from './app.routes';
-import { MsalModule, MsalService, MSAL_INSTANCE } from '@azure/msal-angular';
-import { PublicClientApplication } from '@azure/msal-browser';
 import { msalConfig } from './auth-config';
 
-export function MSALInstanceFactory() {
+export function msalInstanceFactory(): IPublicClientApplication {
   return new PublicClientApplication(msalConfig);
 }
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    importProvidersFrom(MsalModule),
     {
       provide: MSAL_INSTANCE,
-      useFactory: MSALInstanceFactory
+      useFactory: msalInstanceFactory
     },
-    MsalService
+    MsalService,
+    MsalBroadcastService
   ]
 };
