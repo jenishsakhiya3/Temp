@@ -127,7 +127,7 @@ export class AppComponent implements OnInit {
 
   login(): void {
     this.msalService.loginRedirect({
-      scopes: ['User.Read']
+      scopes: ['api://15204d0b-ec8d-4602-9575-5a31aa69e93c/access_as_user']
     });
   }
 
