@@ -22,13 +22,13 @@ export interface TenantConfig {
 export const TENANTS: TenantConfig[] = [
   {
     id: 'global-tenant',
-    name: 'Global Tenant',
-    appServiceUrl: 'https://sportapi-f8c3aghnezajanbx.canadacentral-01.azurewebsites.net'
+    name: 'Region1',
+    appServiceUrl: 'https://frontend1-cufvf6fjc0epchf0.eastasia-01.azurewebsites.net'
   },
   {
     id: 'child-tenant-b',
-    name: 'Tenant B',
-    appServiceUrl: 'https://sportapi-dzgqbheja0fadadu.eastasia-01.azurewebsites.net'
+    name: 'Region2',
+    appServiceUrl: 'https://frontend2-bpf8dqb4hvhkhhae.eastasia-01.azurewebsites.net'
   }
 ];
 
