@@ -149,8 +149,16 @@ export class AppComponent implements OnInit {
     let idToken = activeAccount.idToken || '';
     let accessToken = '';
 
+    let targetScope = '';
+    if (tenant.name === 'Region1') { 
+        targetScope = 'api://15204d0b-ec8d-4602-9575-5a31aa69e93c/access_as_user';
+    } else {
+        targetScope = 'api://138410c1-3b76-45c9-bd5c-a1ee8980ddfe/access_as_user';
+    }
+
+    // Request the specific custom API scope instead of User.Read
     const tokenRequest = {
-      scopes: ['User.Read'],
+      scopes: [targetScope], 
       account: activeAccount
     };
 
