@@ -127,9 +127,7 @@ export class AppComponent implements OnInit {
 
   login(): void {
     this.msalService.loginRedirect({
-      scopes: [
-      'api://84b4ce9a-e11f-4a7e-ace5-5f35670980ac/access_as_user'
-    ]
+      scopes: ['User.Read']
     });
   }
 
@@ -152,10 +150,14 @@ export class AppComponent implements OnInit {
   let idToken = activeAccount.idToken || '';
   let accessToken = '';
 
+  const targetScope = tenant.name === 'Region1'
+    ? 'api://84b4ce9a-e11f-4a7e-ace5-5f35670980ac/access_as_user'
+    : 'api://8362547a-388a-41c2-a058-cf667e6f2fbe/access_as_user';
+
   try {
     // 2. Request standard 'User.Read' access token (does not require admin consent)
     const tokenResponse = await this.msalService.instance.acquireTokenSilent({
-      scopes: ['User.Read'],
+      scopes: [targetScope],
       account: activeAccount
     });
     accessToken = tokenResponse.accessToken || '';
