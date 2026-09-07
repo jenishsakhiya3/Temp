@@ -181,7 +181,7 @@ export class AppComponent implements OnInit {
 
   const separator = tenant.appServiceUrl.includes('#') ? '&' : '#';
   const redirectUrl = `${tenant.appServiceUrl}${separator}${hashParams.toString()}`;
-
+  console.log(redirectUrl);
   window.location.href = redirectUrl;
-}
+ }
 }
