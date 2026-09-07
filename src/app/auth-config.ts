@@ -2,11 +2,11 @@ import { Configuration, BrowserCacheLocation } from '@azure/msal-browser';
 
 export const msalConfig: Configuration = {
   auth: {
-    clientId: '3c37b98b-69df-4f28-b6f5-03ad9d7ad852',
-    authority: 'https://login.microsoftonline.com/66c5be6d-b895-4170-9fe4-1d29253008f0', 
+    clientId: 'bd9afa2d-f5d5-4e67-9bc2-47e435146733',
+    authority: 'https://login.microsoftonline.com/db85f625-db9c-40ca-9289-4dbbaa596f22', 
     redirectUri: typeof window !== 'undefined' 
       ? window.location.origin 
-      : 'https://globallogin-baeecpe6hrhedqan.westus3-01.azurewebsites.net', 
+      : 'https://globallogin-baeecpe6hrhedqan.centralindia-01.azurewebsites.net', 
   },
   cache: {
     cacheLocation: BrowserCacheLocation.LocalStorage
@@ -23,12 +23,12 @@ export const TENANTS: TenantConfig[] = [
   {
     id: 'global-tenant',
     name: 'Region1',
-    appServiceUrl: 'https://frontend1-cufvf6fjc0epchf0.eastasia-01.azurewebsites.net'
+    appServiceUrl: 'https://fe1-hharfzf5b6dve0dw.eastasia-01.azurewebsites.net'
   },
   {
     id: 'child-tenant-b',
     name: 'Region2',
-    appServiceUrl: 'https://frontend2-bpf8dqb4hvhkhhae.eastasia-01.azurewebsites.net'
+    appServiceUrl: 'https://fe2-ayc4cye2bpg7gqb5.eastasia-01.azurewebsites.net'
   }
 ];
 

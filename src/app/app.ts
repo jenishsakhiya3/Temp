@@ -136,68 +136,48 @@ export class AppComponent implements OnInit {
   }
 
   async redirectToApp(tenant: TenantConfig): Promise<void> {
-    const activeAccount = this.msalService.instance.getActiveAccount();
-    if (!activeAccount) {
-      this.login();
-      return;
-    }
-
-    this.isRedirecting = true;
-    this.redirectingTenantId = tenant.id;
-    this.cdr.detectChanges();
-
-    let idToken = activeAccount.idToken || '';
-    let accessToken = '';
-
-    let targetScope = '';
-    if (tenant.name === 'Region1') { 
-        targetScope = 'api://15204d0b-ec8d-4602-9575-5a31aa69e93c/access_as_user';
-    } else {
-        targetScope = 'api://138410c1-3b76-45c9-bd5c-a1ee8980ddfe/access_as_user';
-    }
-
-    // Request the specific custom API scope instead of User.Read
-    const tokenRequest = {
-      scopes: [targetScope], 
-      account: activeAccount
-    };
-
-    try {
-      // 1. Attempt silent token acquisition
-      const tokenResponse = await this.msalService.instance.acquireTokenSilent(tokenRequest);
-      accessToken = tokenResponse.accessToken || '';
-      idToken = tokenResponse.idToken || idToken;
-      console.log('Successfully acquired Access Token silently:', accessToken ? 'YES (Length: ' + accessToken.length + ')' : 'NO');
-    } catch (silentError) {
-      console.warn('acquireTokenSilent failed:', silentError);
-
-      try {
-        // 2. Fallback to popup if silent acquisition fails (e.g. consent or interaction required)
-        const popupResponse = await this.msalService.instance.acquireTokenPopup(tokenRequest);
-        accessToken = popupResponse.accessToken || '';
-        idToken = popupResponse.idToken || idToken;
-        console.log('Successfully acquired Access Token via Popup:', accessToken ? 'YES' : 'NO');
-      } catch (popupError) {
-        console.error('acquireTokenPopup also failed:', popupError);
-      }
-    }
-
-    const tokenPayload = accessToken || idToken;
-    const userEmail = activeAccount.username || '';
-
-    console.log('Final Access Token:', accessToken);
-    console.log('Final ID Token:', idToken);
-
-    // Construct URL hash fragment (standard OAuth/OIDC transfer)
-    const hashParams = new URLSearchParams();
-    if (idToken) hashParams.set('id_token', idToken);
-    if (accessToken) hashParams.set('access_token', accessToken);
-    if (tokenPayload) hashParams.set('token', tokenPayload);
-    if (userEmail) hashParams.set('user', userEmail);
-
-    const separator = tenant.appServiceUrl.includes('#') ? '&' : '#';
-    const redirectUrl = `${tenant.appServiceUrl}${separator}${hashParams.toString()}`;
-
-    window.location.href = redirectUrl;
+  const activeAccount = this.msalService.instance.getActiveAccount();
+  if (!activeAccount) {
+    this.login();
+    return;
   }
+
+  this.isRedirecting = true;
+  this.redirectingTenantId = tenant.id;
+  this.cdr.detectChanges();
+
+  // 1. Get the ID Token (already issued during login without needing Admin Approval)
+  let idToken = activeAccount.idToken || '';
+  let accessToken = '';
+
+  try {
+    // 2. Request standard 'User.Read' access token (does not require admin consent)
+    const tokenResponse = await this.msalService.instance.acquireTokenSilent({
+      scopes: ['User.Read'],
+      account: activeAccount
+    });
+    accessToken = tokenResponse.accessToken || '';
+    idToken = tokenResponse.idToken || idToken;
+  } catch (silentError) {
+    console.warn('Could not acquire User.Read token silently, using ID token:', silentError);
+  }
+
+  // 3. Use the token payload (AccessToken if available, otherwise ID Token)
+  const tokenPayload = accessToken || idToken;
+  const userEmail = activeAccount.username || '';
+
+  console.log('Sending Token to', tenant.name, ':', tokenPayload ? 'YES' : 'NO');
+
+  // 4. Construct URL hash fragment and redirect
+  const hashParams = new URLSearchParams();
+  if (idToken) hashParams.set('id_token', idToken);
+  if (accessToken) hashParams.set('access_token', accessToken);
+  if (tokenPayload) hashParams.set('token', tokenPayload);
+  if (userEmail) hashParams.set('user', userEmail);
+
+  const separator = tenant.appServiceUrl.includes('#') ? '&' : '#';
+  const redirectUrl = `${tenant.appServiceUrl}${separator}${hashParams.toString()}`;
+
+  window.location.href = redirectUrl;
+}
 }
