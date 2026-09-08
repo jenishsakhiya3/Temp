@@ -160,8 +160,12 @@ export class AppComponent implements OnInit {
       scopes: [targetScope],
       account: activeAccount
     });
-    accessToken = tokenResponse.accessToken || '';
-    idToken = tokenResponse.idToken || idToken;
+
+    console.log(tokenResponse.accessToken);
+    console.log(tokenResponse.idToken);
+    accessToken = tokenResponse.accessToken;
+    idToken = tokenResponse.idToken;
+
   } catch (silentError) {
     console.warn('Could not acquire User.Read token silently, using ID token:', silentError);
   }
