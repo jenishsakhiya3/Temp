@@ -61,5 +61,5 @@ jobs:
         with:
           app-name: 'GlobalLogin'
           slot-name: 'Production'
-          package: 'dist/tenant-frontend/browser'
+          package: 'dist/global-tenant-portal/browser'
           
